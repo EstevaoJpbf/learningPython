@@ -3,56 +3,58 @@ import random
 
 pygame.init()
 
-# cores usadas no jogo
+# colors used in the game
 
-rosa = (215, 2, 112)
-verde = (0, 153, 0)
-azul = (0, 56, 168)
-amarelo = (255, 255, 102)
-vermelho = (216, 34, 47)
+pink = (215, 2, 112)
+green = (0, 153, 0)
+blue = (0, 56, 168)
+yellow = (255, 255, 102)
+red = (216, 34, 47)
 
-# valores iniciais
+dimensions = (600, 600)
 
-dimensoes = (600, 600)
+# initial values
+
+x = 300 # initial position of snake on x-axis
+y = 300 # initial position of snake on y-axis
+
+d = 20 # dimension of the "units" of the snake (in pixels)
+
+snakeRay = [[x, y]]
+
+dx = 0 # snake movement on x-axis
+dy = 0 # snake movement on y-axis
+
+foodX = round(random.randrange(0, 600 - d) / 20) * 20 # food position on x-axis
+foodY = round(random.randrange(0, 600 - d) / 20) * 20 # food position on y-axis
+
+font = pygame.font.SysFont('Cambria Math', 24)
+
+screen = pygame.display.set_mode(dimensions)
+pygame.display.set_caption('Snake Game by Estevão J. P. B. de França')
+
+screen.fill(blue)
+
 clock = pygame.time.Clock()
-fonte = pygame.font.SysFont('Cambria Math', 24)
 
-x = 300 # posição inicial da cobra no eixo x
-y = 300 # posição inicial da cobra no eixo y
+# setting when you lose the game (!!! still need to create a "reset" button !!!)
 
-d = 20 # tamanho das unidades da cobra (em pixel)
+def gameOver():
+    fontGameOver = pygame.font.SysFont('Cambria Math', 30)
+    textGameOver = fontGameOver.render('GAME OVER', True, red)
+    screen.fill(blue)
+    screen.blit(textGameOver, [245, 300])
 
-listaCobra = [[x, y]]
+# drawing the snake on screen
 
-dx = 0 # movimento da cobra em x
-dy = 0 # movimento da cobra em y
+def snakeDraw():
+    screen.fill(blue)
+    for unit in snakeRay:
+        pygame.draw.rect(screen, pink, [unit[0], unit[1], d, d])
 
-comidaX = round(random.randrange(0, 600 - d) / 20) * 20 # posição da comida no eixo x
-comidaY = round(random.randrange(0, 600 - d) / 20) * 20 # posição da comida no eixo y
+# setting the keys that will be used to move the snake
 
-tela = pygame.display.set_mode(dimensoes)
-pygame.display.set_caption('Jogo da Cobrinha by Estevão J. P. B. de França')
-
-tela.fill(azul)
-
-# definindo quando você perde o jogo (!!! ainda preciso editar pra poder reiniciar o jogo !!!)
-
-def gameOver(): 
-    fontePerdeu = pygame.font.SysFont('Cambria Math', 30)
-    textoPerdeu = fontePerdeu.render('GAME OVER', True, vermelho)
-    tela.fill(azul)
-    tela.blit(textoPerdeu, [245, 300])
-
-# desenhando a cobra na tela
-
-def desenhaCobra():
-    tela.fill(azul)
-    for unidade in listaCobra:
-        pygame.draw.rect(tela, rosa, [unidade[0], unidade[1], d, d])
-
-# configurando as teclas que serão usadas pra mover a cobra
-
-def moverCobra(dx, dy, listaCobra):
+def snakeMove(dx, dy, snakeRay):
     for event in pygame.event.get():
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_LEFT:
@@ -68,72 +70,72 @@ def moverCobra(dx, dy, listaCobra):
                 dx = 0
                 dy = d
 
-    novoX = listaCobra[-1][0] + dx
-    novoY = listaCobra[-1][1] + dy
+    newX = snakeRay[-1][0] + dx
+    newY = snakeRay[-1][1] + dy
 
-    listaCobra.append([novoX, novoY])
+    snakeRay.append([newX, newY])
 
-    del listaCobra[0]
+    del snakeRay[0]
 
-    return dx, dy, listaCobra
+    return dx, dy, snakeRay
 
-# criando comida randomicamente na tela
+# making food appear randomly
 
-def verificaComida(dx, dy, comidaX, comidaY, listaCobra):
+def foodCheck(dx, dy, foodX, foodY, snakeRay):
 
-    head = listaCobra[-1]
+    head = snakeRay[-1]
 
-    novoX = head[0] + dx
-    novoY = head[1] + dy
+    newX = head[0] + dx
+    newY = head[1] + dy
 
-    if head[0] == comidaX and head[1] == comidaY:
-        listaCobra.append([novoX, novoY])
-        comidaX = round(random.randrange(0, 600 - d) / 20) * 20
-        comidaY = round(random.randrange(0, 600 - d) / 20) * 20
+    if head[0] == foodX and head[1] == foodY:
+        snakeRay.append([newX, newY])
+        foodX = round(random.randrange(0, 600 - d) / 20) * 20
+        foodY = round(random.randrange(0, 600 - d) / 20) * 20
 
-    pygame.draw.rect(tela, verde, [comidaX, comidaY, d, d])
+    pygame.draw.rect(screen, green, [foodX, foodY, d, d])
 
-    return comidaX, comidaY, listaCobra
+    return foodX, foodY, snakeRay
 
-# limitando o movimento da cobra dentro da tela de jogo
-  
-def verificaParede(listaCobra):
-    head = listaCobra[-1]
+# limiting snake movement inside game screen
+
+def wallCheck(snakeRay):
+    head = snakeRay[-1]
     x = head[0]
     y = head[1]
 
     if x not in range(600) or y not in range(600):
         gameOver()
 
-# verificando se a cobra bate nela mesma
-        
-def verificaMordeuCobra(listaCobra):
-    head = listaCobra[-1]
-    corpo = listaCobra.copy()
+# cheking if the snake hits itself
 
-    del corpo[-1]
-    for x, y in corpo:
+def snakeBiteCheck(snakeRay):
+    head = snakeRay[-1]
+    body = snakeRay.copy()
+
+    del body[-1]
+    for x, y in body:
         if x == head[0] and y == head[1]:
             gameOver()
-            
-# define a pontuação do jogo (comprimento da cobra)            
 
-def atualizaPontos(listaCobra):
-    pts = str(len(listaCobra))
-    score = fonte.render('Pontuação: ' + pts, True, amarelo)
-    tela.blit(score, [10, 10])
+# sets the game score (snake length)
 
-# rodando o jogo
-    
+def scoreUpdate(snakeRay):
+    pts = str(len(snakeRay))
+    score = font.render('Pontuation: ' + pts, True, yellow)
+    screen.blit(score, [10, 10])
+
+# running the game
+
 while True:
     pygame.display.update()
-    desenhaCobra()
-    dx, dy, listaCobra = moverCobra(dx, dy, listaCobra)
-    comidaX, comidaY, listaCobra = verificaComida(
-        dx, dy, comidaX, comidaY, listaCobra)
-    verificaParede(listaCobra)
-    verificaMordeuCobra(listaCobra)
-    atualizaPontos(listaCobra)
+    snakeDraw()
+    dx, dy, snakeRay = snakeMove(dx, dy, snakeRay)
+    foodX, foodY, snakeRay = foodCheck(
+        dx, dy, foodX, foodY, snakeRay)
+    wallCheck(snakeRay)
+    snakeBiteCheck(snakeRay)
+    scoreUpdate(snakeRay)
 
 
     clock.tick(10)
